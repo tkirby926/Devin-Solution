@@ -1,70 +1,86 @@
-import os
 import requests
 
-DEVIN_API_KEY = os.getenv("DEVIN_API_KEY")
-DEVIN_API_BASE = os.getenv("DEVIN_API_BASE")
+# ---------------------------------------------------------------------------
+# Devin API configuration
+# Replace the placeholder values below with your actual credentials.
+# Base URL: https://api.devin.ai/v1  (legacy)
+#       or: https://api.devin.ai/v3/organizations  (current, recommended)
+# ---------------------------------------------------------------------------
+DEVIN_API_KEY = "YOUR_DEVIN_API_KEY"  # TODO: replace with actual key
+DEVIN_API_BASE = "https://api.devin.ai/v1"  # Devin v1 API base URL
 
 
-def create_devin_task(repo_url, issue_number, title, body, severity):
+def create_devin_session(repo_url, issue_number, title, body, severity):
+    """Create a Devin session to handle a GitHub issue.
+
+    The Devin API uses *sessions* (not tasks).  The main field in the
+    request body is ``prompt`` — a free-text string that tells Devin
+    what to do.  The response includes ``session_id`` which is used to
+    poll for status later.
+
+    Docs: https://docs.devin.ai/api-reference/v1/overview
+    """
     if severity == "small":
-        instructions = f"""
-        Resolve GitHub Issue #{issue_number}.
-        - Create branch devin/issue-{issue_number}
-        - Implement fix
-        - Run tests
-        - Open PR referencing issue
-        """
+        instructions = (
+            f"Resolve GitHub Issue #{issue_number} in the repo {repo_url}.\n"
+            f"- Create branch devin/issue-{issue_number}\n"
+            f"- Implement the fix\n"
+            f"- Run tests\n"
+            f"- Open a PR referencing the issue\n"
+        )
     elif severity == "medium":
-        instructions = f"""
-        Analyze GitHub Issue #{issue_number}.
-        Provide detailed remediation plan.
-        Do NOT implement.
-        """
-    else:
-        instructions = f"""
-        Analyze GitHub Issue #{issue_number}.
-        Explain why this requires senior engineer review.
-        Do NOT implement.
-        """
+        instructions = (
+            f"Analyze GitHub Issue #{issue_number} in the repo {repo_url}.\n"
+            f"Provide a detailed remediation plan.\n"
+            f"Do NOT implement the fix — only plan it.\n"
+        )
+    else:  # large
+        instructions = (
+            f"Analyze GitHub Issue #{issue_number} in the repo {repo_url}.\n"
+            f"Explain why this requires senior engineer review.\n"
+            f"Do NOT implement any changes.\n"
+        )
 
-    payload = {
-        "repo_url": repo_url,
-        "task": f"""
-        Issue Title: {title}
-        Issue Body:
-        {body}
+    prompt = (
+        f"Issue Title: {title}\n"
+        f"Issue Body:\n{body}\n\n"
+        f"{instructions}"
+    )
 
-        {instructions}
-        """,
-        "metadata": {
-            "issue_number": issue_number,
-            "severity": severity
-        }
-    }
+    payload = {"prompt": prompt}
 
     headers = {
         "Authorization": f"Bearer {DEVIN_API_KEY}",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
     }
 
     response = requests.post(
-        f"{DEVIN_API_BASE}/tasks",
+        f"{DEVIN_API_BASE}/sessions",
         json=payload,
-        headers=headers
+        headers=headers,
     )
 
     response.raise_for_status()
-    return response.json()["id"]
+    return response.json()["session_id"]
 
 
-def check_task_status(task_id):
+def check_session_status(session_id):
+    """Poll the status of a Devin session.
+
+    Terminal statuses returned by the Devin API:
+      - ``exit``      — session completed successfully
+      - ``error``     — session encountered an error
+      - ``suspended`` — session was suspended
+
+    The response also includes ``url`` which links to the Devin session.
+    """
     headers = {
-        "Authorization": f"Bearer {DEVIN_API_KEY}"
+        "Authorization": f"Bearer {DEVIN_API_KEY}",
     }
 
     response = requests.get(
-        f"{DEVIN_API_BASE}/tasks/{task_id}",
-        headers=headers
+        f"{DEVIN_API_BASE}/session/{session_id}",
+        headers=headers,
     )
 
     response.raise_for_status()
