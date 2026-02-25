@@ -1,5 +1,5 @@
 import os
-
+from env import DEVIN_API_KEY
 import requests
 
 # ---------------------------------------------------------------------------
@@ -9,7 +9,7 @@ import requests
 #   https://api.devin.ai/v1                (legacy, default)
 #   https://api.devin.ai/v3/organizations  (current, recommended)
 # ---------------------------------------------------------------------------
-DEVIN_API_KEY = os.getenv("DEVIN_API_KEY")  # Set via environment variable
+ # Set via environment variable
 DEVIN_API_BASE = os.getenv("DEVIN_API_BASE", "https://api.devin.ai/v1")  # Devin v1 API base URL
 
 
