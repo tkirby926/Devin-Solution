@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 import threading
 import time
 
-from devin_client import create_devin_task, check_task_status
+from devin_client import create_devin_session, check_session_status
 from github_commenter import post_issue_comment
 
 app = Flask(__name__)
@@ -47,45 +47,60 @@ def github_webhook():
 
     severity = classify_severity(title, body)
 
-    task_id = create_devin_task(
+    session_id = create_devin_session(
         repo_url,
         issue_number,
         title,
         body,
-        severity
+        severity,
     )
 
-    TASKS[task_id] = {
+    TASKS[session_id] = {
         "repo": repo,
         "issue_number": issue_number,
-        "status": "in_progress"
+        "status": "in_progress",
     }
 
-    threading.Thread(target=monitor_task, args=(task_id,)).start()
+    threading.Thread(target=monitor_session, args=(session_id,)).start()
 
     return jsonify({
-        "status": "devin-task-created",
-        "task_id": task_id,
-        "severity": severity
+        "status": "devin-session-created",
+        "session_id": session_id,
+        "severity": severity,
     })
 
 
-def monitor_task(task_id):
+def monitor_session(session_id):
+    """Poll a Devin session until it reaches a terminal status.
+
+    Terminal statuses (per Devin API docs):
+      - exit      — completed successfully
+      - error     — encountered an error
+      - suspended — paused / needs attention
+    """
     while True:
-        result = check_task_status(task_id)
+        result = check_session_status(session_id)
+        status = result["status"]
 
-        if result["status"] in ["completed", "failed"]:
-            TASKS[task_id]["status"] = result["status"]
+        if status in ("exit", "error", "suspended"):
+            TASKS[session_id]["status"] = status
 
-            repo = TASKS[task_id]["repo"]
-            issue_number = TASKS[task_id]["issue_number"]
+            repo = TASKS[session_id]["repo"]
+            issue_number = TASKS[session_id]["issue_number"]
+            session_url = result.get("url", "(no URL available)")
 
-            message = f"""
-            Devin Task Completed
-            Status: {result['status']}
-            Output:
-            {result.get('summary', 'See task logs.')}
-            """
+            status_label = {
+                "exit": "Completed",
+                "error": "Failed",
+                "suspended": "Suspended",
+            }.get(status, status)
+
+            message = (
+                f"**Devin Session Update**\n\n"
+                f"- **Status:** {status_label}\n"
+                f"- **Session:** {session_url}\n\n"
+                f"Review the session for full details."
+            )
 
             post_issue_comment(repo, issue_number, message)
             break
