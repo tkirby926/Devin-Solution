@@ -1,13 +1,16 @@
+import os
+
 import requests
 
 # ---------------------------------------------------------------------------
 # Devin API configuration
-# Replace the placeholder values below with your actual credentials.
-# Base URL: https://api.devin.ai/v1  (legacy)
-#       or: https://api.devin.ai/v3/organizations  (current, recommended)
+# Set via environment variables.  The base URL defaults to the Devin v1 API.
+# Base URL options:
+#   https://api.devin.ai/v1                (legacy, default)
+#   https://api.devin.ai/v3/organizations  (current, recommended)
 # ---------------------------------------------------------------------------
-DEVIN_API_KEY = "YOUR_DEVIN_API_KEY"  # TODO: replace with actual key
-DEVIN_API_BASE = "https://api.devin.ai/v1"  # Devin v1 API base URL
+DEVIN_API_KEY = os.getenv("DEVIN_API_KEY")  # Set via environment variable
+DEVIN_API_BASE = os.getenv("DEVIN_API_BASE", "https://api.devin.ai/v1")  # Devin v1 API base URL
 
 
 def create_devin_session(repo_url, issue_number, title, body, severity):
@@ -79,7 +82,7 @@ def check_session_status(session_id):
     }
 
     response = requests.get(
-        f"{DEVIN_API_BASE}/session/{session_id}",
+        f"{DEVIN_API_BASE}/sessions/{session_id}",
         headers=headers,
     )
 

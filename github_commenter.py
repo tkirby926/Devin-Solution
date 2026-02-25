@@ -1,11 +1,13 @@
+import os
+
 import requests
 
 # ---------------------------------------------------------------------------
 # GitHub API configuration
-# Replace the placeholder below with your actual GitHub personal access token.
+# Set GITHUB_TOKEN via environment variable.
 # The token needs `repo` scope to post comments on issues.
 # ---------------------------------------------------------------------------
-GITHUB_TOKEN = "YOUR_GITHUB_TOKEN"  # TODO: replace with actual token
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
 
 def post_issue_comment(repo_full_name, issue_number, message):
