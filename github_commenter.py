@@ -8,8 +8,6 @@ import requests
 # The token needs `repo` scope to post comments on issues.
 # ---------------------------------------------------------------------------
 
-
-
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
 
 
