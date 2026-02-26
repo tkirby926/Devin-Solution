@@ -12,9 +12,6 @@ import requests
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
 
 
-GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
-
-
 def post_issue_comment(repo_full_name, issue_number, message):
     url = f"https://api.github.com/repos/{repo_full_name}/issues/{issue_number}/comments"
 
