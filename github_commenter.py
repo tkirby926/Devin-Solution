@@ -1,6 +1,8 @@
 import os
-from env import github_token
+
 import requests
+
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
 
 # ---------------------------------------------------------------------------
 # GitHub API configuration
@@ -14,7 +16,7 @@ def post_issue_comment(repo_full_name, issue_number, message):
     url = f"https://api.github.com/repos/{repo_full_name}/issues/{issue_number}/comments"
 
     headers = {
-        "Authorization": f"Bearer {github_token}",
+        "Authorization": f"Bearer {GITHUB_TOKEN}",
         "Accept": "application/vnd.github+json"
     }
 
