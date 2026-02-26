@@ -1,5 +1,5 @@
 import os
-from env import DEVIN_API_KEY
+
 import requests
 
 # ---------------------------------------------------------------------------
@@ -9,8 +9,9 @@ import requests
 #   https://api.devin.ai/v1                (legacy, default)
 #   https://api.devin.ai/v3/organizations  (current, recommended)
 # ---------------------------------------------------------------------------
- # Set via environment variable
-DEVIN_API_BASE = "https://api.devin.ai/v1"  # Devin v1 API base URL
+DEVIN_API_KEY = os.getenv("DEVIN_API_KEY", "")
+
+DEVIN_API_BASE = os.getenv("DEVIN_API_BASE", "https://api.devin.ai/v1")
 
 
 def create_devin_session(repo_url, issue_number, title, body, severity):
